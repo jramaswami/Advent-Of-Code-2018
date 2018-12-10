@@ -21,22 +21,11 @@ def parse_star(input_string):
     return Star(x, y, dx, dy)
 
 
-def on_screen(star, tick, grid):
-    "Return true if x/y is on grid."
-    x = star.x + (tick * star.dx)
-    y = star.y + (tick * star.dy)
-    return (x >= -grid.offx and x <= grid.offx and
-            y >= -grid.offy and y <= grid.offy)
-
-
 def plot_star(star, tick, grid):
     "Put star on grid, if it is in view."
-    if on_screen(star, tick, grid):
-        x = star.x + (star.dx * tick) + grid.offx
-        y = star.y + (star.dy * tick) + grid.offy
-        grid.grid[y][x] = '#'
-        return True
-    return False
+    x = star.x + (star.dx * tick) + grid.offx
+    y = star.y + (star.dy * tick) + grid.offy
+    grid.grid[y][x] = '#'
 
 
 def print_grid(grid):
@@ -46,30 +35,44 @@ def print_grid(grid):
     print()
 
 
-def solveA(stars):
-    "Solve first part of puzzle."
-    height = 501
-    width = 1001
-    start_y = height // 2
-    start_x = width // 2
-    for tick in range(10000, 11000):
-        grid = Grid([['.' for _ in range(width)] for _ in range(height)],
-                    width, height, start_x, start_y)
-        result = [plot_star(star, tick, grid) for star in stars]
-        if all(result):
-            print(tick)
+def stars_are_aligned(stars, tick):
+    "Return true of stars are aligned."
+    init_y = stars[0].y + (stars[0].dy * tick)
+    for star in stars[1:]:
+        delta = abs(init_y - (star.y + (star.dy * tick)))
+        if delta > 9:
+            return False
+    return True
+
+
+def solve(stars):
+    "Solve both parts of the puzzle."
+    tick = 1
+    for tick in range(15000):
+        if stars_are_aligned(stars, tick):
+            min_y = min(star.y + (tick * star.dy) for star in stars)
+            max_y = max(star.y + (tick * star.dy) for star in stars)
+            min_x = min(star.x + (tick * star.dx) for star in stars)
+            max_x = max(star.x + (tick * star.dx) for star in stars)
+            height = 1 + max_y - min_y
+            start_y = -min_y
+            width = 1 + max_x - min_x
+            start_x = -min_x
+            grid = Grid([['.' for _ in range(width)] for _ in range(height)],
+                        width, height, start_x, start_y)
+            for star in stars:
+                plot_star(star, tick, grid)
             print_grid(grid)
+            print('time', tick)
+            return
 
 
-def solveB():
-    "Solve second part of puzzle."
-    pass
 
 def main():
     "Main program."
     import sys
     stars = [parse_star(l) for l in sys.stdin]
-    solveA(stars)
+    solve(stars)
 
 
 if __name__ == '__main__':
