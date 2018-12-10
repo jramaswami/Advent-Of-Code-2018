@@ -25,7 +25,7 @@ def plot_star(star, tick, grid):
     "Put star on grid, if it is in view."
     x = star.x + (star.dx * tick) + grid.offx
     y = star.y + (star.dy * tick) + grid.offy
-    grid.grid[y][x] = '#'
+    grid.grid[y][x] = '\u2588'
 
 
 def print_grid(grid):
@@ -58,14 +58,13 @@ def solve(stars):
             start_y = -min_y
             width = 1 + max_x - min_x
             start_x = -min_x
-            grid = Grid([['.' for _ in range(width)] for _ in range(height)],
+            grid = Grid([[' ' for _ in range(width)] for _ in range(height)],
                         width, height, start_x, start_y)
             for star in stars:
                 plot_star(star, tick, grid)
             print_grid(grid)
             print('time', tick)
             return
-
 
 
 def main():
