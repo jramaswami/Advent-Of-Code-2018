@@ -48,15 +48,16 @@ def print_grid(grid):
 
 def solveA(stars):
     "Solve first part of puzzle."
-    height = 17
-    start_y = 8
-    width = 181
-    start_x = 90
-    for tick in range(5):
+    height = 501
+    width = 1001
+    start_y = height // 2
+    start_x = width // 2
+    for tick in range(10000, 11000):
         grid = Grid([['.' for _ in range(width)] for _ in range(height)],
                     width, height, start_x, start_y)
         result = [plot_star(star, tick, grid) for star in stars]
-        if result:
+        if all(result):
+            print(tick)
             print_grid(grid)
 
 
