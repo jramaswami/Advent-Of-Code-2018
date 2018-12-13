@@ -133,8 +133,9 @@ class MineMap:
                 assert cart.direction == '>' or cart.direction == '<'
 
         if explode:
-            assert len([c for c in map_to_string(self.mine_map)
-                        if c in ['v','^','>','<']]) == self.cart_count
+            # This assertion takes run time from t < 2 seconds to t ~ 98 seconds.
+            # assert len([c for c in map_to_string(self.mine_map)
+            #             if c in ['v','^','>','<']]) == self.cart_count
             if self.cart_count == 1:
                 survivor = [c for c in self.carts if not c.dead][0]
                 return (survivor.x, survivor.y)
