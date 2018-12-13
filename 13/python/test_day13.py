@@ -130,4 +130,7 @@ def test_solve_b():
     with open('../input13A.txt') as input_file:
         mine_map = d13.MineMap(input_file.readlines())
         assert mine_map.solve_b() == (73, 36)
+    with open('../input13.txt') as input_file:
+        mine_map = d13.MineMap(input_file.readlines())
+        assert mine_map.solve_b() == (91, 72)
 

@@ -85,13 +85,13 @@ class MineMap:
             if cart.dead:
                 continue
             if cart.x == x and cart.y == y:
-                print('Killing', cart)
                 cart.dead = True
                 body_count += 1
         self.mine_map[y][x] = self.clean_map[y][x]
         assert body_count == 2
         self.cart_count -= 2
         assert self.cart_count > 0
+        assert self.cart_count % 2 == 1
 
     def detect_collision(self, cart0):
         "Detect collision."
@@ -114,17 +114,9 @@ class MineMap:
             # update map with old symbol
             self.mine_map[prev_y][prev_x] = self.clean_map[prev_y][prev_x]
             # detect collision:
-            # if self.mine_map[cart.y][cart.x] in ['^', 'v', '>', '<']:
-            colliding_cart = self.detect_collision(cart)
-            if colliding_cart:
-                # print(cart, colliding_cart)
+            if self.mine_map[cart.y][cart.x] in ['^', 'v', '>', '<']:
                 if explode:
-                    self.mine_map[cart.y][cart.x] = self.clean_map[cart.y][cart.x]
-                    colliding_cart.dead = True
-                    cart.dead = True
-                    self.cart_count -= 2
-                    assert self.cart_count > 0
-                    assert self.cart_count % 2 == 1
+                    self.kill_carts(cart.x, cart.y)
                 else:
                     self.mine_map[cart.y][cart.x] = 'X'
                     return (cart.x, cart.y)
@@ -140,9 +132,12 @@ class MineMap:
             if self.clean_map[cart.y][cart.x] == '-':
                 assert cart.direction == '>' or cart.direction == '<'
 
-        if self.cart_count == 1:
-            survivor = [c for c in self.carts if not c.dead][0]
-            return (survivor.x, survivor.y)
+        if explode:
+            assert len([c for c in map_to_string(self.mine_map)
+                        if c in ['v','^','>','<']]) == self.cart_count
+            if self.cart_count == 1:
+                survivor = [c for c in self.carts if not c.dead][0]
+                return (survivor.x, survivor.y)
 
         self.carts.sort()
 
@@ -159,10 +154,7 @@ class MineMap:
         while True:
             t += 1
             result = self.tick(explode=True)
-            map_string = map_to_string(self.mine_map)
-            assert len([c for c in map_string if c in ['v','^','>','<']]) == self.cart_count
             assert self.cart_count % 2 == 1
-            # print(t, [c for c in self.carts if not c.dead])
             if result:
                 return result
 
