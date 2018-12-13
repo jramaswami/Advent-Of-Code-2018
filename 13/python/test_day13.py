@@ -92,7 +92,7 @@ def test_update_direction():
 
 def read_test_ticks():
     "Read test ticks from file."
-    with open('test_ticks.txt') as input_file:
+    with open('../test_ticks.txt') as input_file:
         return input_file.read().split('\n%\n')[:-1]
 
 def test_ticks():
@@ -103,12 +103,31 @@ def test_ticks():
         assert test_ticks[0] == d13.map_to_string(mine_map.mine_map)
         for t in range(1, len(test_ticks)):
             mine_map.tick()
+            # print(t)
+            # print('expected')
+            # print(test_ticks[t])
+            # print('actual')
+            # print(d13.map_to_string(mine_map.mine_map))
             assert test_ticks[t] == d13.map_to_string(mine_map.mine_map)
 
 def test_solve_a():
     with open('../test13.txt') as input_file:
         mine_map = d13.MineMap(input_file.readlines())
-        assert d13.solve_a(mine_map) == (7, 3)
+        assert mine_map.solve_a() == (7, 3)
     with open('../input13.txt') as input_file:
         mine_map = d13.MineMap(input_file.readlines())
-        assert d13.solve_a(mine_map) == (58, 93)
+        assert mine_map.solve_a() == (58, 93)
+    with open('../input13A.txt') as input_file:
+        mine_map = d13.MineMap(input_file.readlines())
+        assert mine_map.solve_a() == (83, 49)
+
+def test_solve_b():
+    input_lines = ['/>-<\  ', '|   |  ', '| /<+-\\',
+                   '| | | v', '\>+</ |', '  |   ^',
+                   '  \<->/']
+    mine_map = d13.MineMap(input_lines)
+    assert mine_map.solve_b() == (6, 4)
+    with open('../input13A.txt') as input_file:
+        mine_map = d13.MineMap(input_file.readlines())
+        assert mine_map.solve_b() == (73, 36)
+

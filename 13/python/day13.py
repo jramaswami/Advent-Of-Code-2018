@@ -28,6 +28,7 @@ class Cart:
         self.y = y
         self.direction = direction
         self.curr_turn = LEFT
+        self.dead = False
 
     def turn(self):
         "Turn"
@@ -75,21 +76,63 @@ class MineMap:
                     clean_row.append(char)
             self.clean_map.append(clean_row)
         self.carts.sort()
+        self.cart_count = len(self.carts)
 
-    def tick(self):
+    def kill_carts(self, x, y):
+        "Kill carts at x, y"
+        body_count = 0
+        for cart in self.carts:
+            if cart.dead:
+                continue
+            if cart.x == x and cart.y == y:
+                print('Killing', cart)
+                cart.dead = True
+                body_count += 1
+        self.mine_map[y][x] = self.clean_map[y][x]
+        assert body_count == 2
+        self.cart_count -= 2
+        assert self.cart_count > 0
+
+    def detect_collision(self, cart0):
+        "Detect collision."
+        for cart1 in self.carts:
+            if cart0.id == cart1.id:
+                continue
+            if cart1.dead:
+                continue
+            if cart0.x == cart1.x and cart0.y == cart1.y:
+                return cart1
+        return None
+
+    def tick(self, explode=False):
         "Move forward one unit in time."
         for cart in self.carts:
+            if explode and cart.dead:
+                continue
             prev_x, prev_y = cart.x, cart.y
             cart.move()
             # update map with old symbol
             self.mine_map[prev_y][prev_x] = self.clean_map[prev_y][prev_x]
             # detect collision:
-            if self.mine_map[cart.y][cart.x] in ['^', 'v', '>', '<']:
-                self.mine_map[cart.y][cart.x] = 'X'
-                return (cart.x, cart.y)
+            # if self.mine_map[cart.y][cart.x] in ['^', 'v', '>', '<']:
+            colliding_cart = self.detect_collision(cart)
+            if colliding_cart:
+                # print(cart, colliding_cart)
+                if explode:
+                    self.mine_map[cart.y][cart.x] = self.clean_map[cart.y][cart.x]
+                    colliding_cart.dead = True
+                    cart.dead = True
+                    self.cart_count -= 2
+                    assert self.cart_count > 0
+                    assert self.cart_count % 2 == 1
+                else:
+                    self.mine_map[cart.y][cart.x] = 'X'
+                    return (cart.x, cart.y)
+
             # update carts direction
-            cart.update_direction(self.clean_map[cart.y][cart.x])
-            self.mine_map[cart.y][cart.x] = cart.direction
+            if not cart.dead:
+                cart.update_direction(self.clean_map[cart.y][cart.x])
+                self.mine_map[cart.y][cart.x] = cart.direction
 
             assert self.clean_map[cart.y][cart.x] in ['|', '-', '/', '\\', '+']
             if self.clean_map[cart.y][cart.x] == '|':
@@ -97,8 +140,31 @@ class MineMap:
             if self.clean_map[cart.y][cart.x] == '-':
                 assert cart.direction == '>' or cart.direction == '<'
 
+        if self.cart_count == 1:
+            survivor = [c for c in self.carts if not c.dead][0]
+            return (survivor.x, survivor.y)
+
         self.carts.sort()
 
+    def solve_a(self):
+        "Solve first part of puzzle."
+        while True:
+            result = self.tick()
+            if result:
+                return result
+
+    def solve_b(self):
+        "Solve first part of puzzle."
+        t = 0
+        while True:
+            t += 1
+            result = self.tick(explode=True)
+            map_string = map_to_string(self.mine_map)
+            assert len([c for c in map_string if c in ['v','^','>','<']]) == self.cart_count
+            assert self.cart_count % 2 == 1
+            # print(t, [c for c in self.carts if not c.dead])
+            if result:
+                return result
 
     def __repr__(self):
         return "{}\n{}\n{}".format(map_to_string(self.mine_map),
@@ -117,28 +183,14 @@ def map_to_string(mine_map):
     "Map to string."
     return "\n".join("".join(row) for row in mine_map)
 
-
-def solve_a(mine_map):
-    "Solve first part of puzzle."
-    tick = 0
-    while True:
-        tick += 1
-        result = mine_map.tick()
-        if result:
-            return result
-
-
-def solve_b():
-    "Solve second part of puzzle."
-    pass
-
-
 def main():
     "Main program."
     import sys
-    mine_map = MineMap(sys.stdin.readlines())
-    print(solve_a(mine_map))
-    # print(solve_b())
+    input_lines = (sys.stdin.readlines())
+    mine_map = MineMap(input_lines)
+    print(mine_map.solve_a())
+    mine_map = MineMap(input_lines)
+    print(mine_map.solve_b())
 
 
 if __name__ == '__main__':
