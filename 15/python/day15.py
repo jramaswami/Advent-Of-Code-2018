@@ -36,7 +36,7 @@ def is_enemy(me, other):
 def find_reachable_squares(cave, start):
     me = cave[start.y][start.x]
     reachables = set([])
-    queue = neighborhood(cave, start)
+    queue = [n for n in neighborhood(cave, start) if cave[n.y][n.x] == '.']
     visited = set([start])
     dist = 0
     while queue:
@@ -104,44 +104,6 @@ def choose_next_move_from_paths(paths_to_target_square):
     return chosen_square
 
 
-def get_best_paths(paths):
-    best_paths = []
-    best_posn = Posn(10000000, 1000000)
-    for path in paths:
-        reachable_square = path[-2]
-        if reachable_square.y < best_posn.y:
-            best_paths = [path]
-            best_posn = reachable_square
-        elif reachable_square.y == best_posn.y:
-            if reachable_square.x == best_posn.x:
-                best_paths.append(path)
-            elif reachable_square.x < best_posn.x:
-                best_paths = [path]
-                best_posn = reachable_square
-    return best_paths
-
-def get_best_move(paths):
-    "Return nearest move."
-    best_mv = Posn(10000000, 1000000)
-    for path in paths:
-        mv = path[1]
-        if mv.y < best_mv.y:
-            best_mv = mv
-        elif mv.y == best_mv.y:
-            if mv.x < best_mv.x:
-                best_mv = mv
-    return best_mv
-
-
-def get_next_move(cave, unit_posn):
-    "Get the unit at given position's next move."
-    paths = bfs(cave, unit_posn)
-    if paths:
-        best_paths = get_best_paths(paths)
-        mv = get_best_move(best_paths)
-        return mv
-
-
 def parse_cave(input_lines):
     "Parse map of cave."
     cave = []
@@ -149,6 +111,7 @@ def parse_cave(input_lines):
     goblin_id = 0
     ord_a = ord('a')
     ord_A = ord('A')
+    hitpoints = {}
     for line in input_lines:
         cave_row = []
         line = line.strip()
@@ -157,14 +120,16 @@ def parse_cave(input_lines):
                 elf = ord_A + elf_id
                 elf_id += 1
                 cave_row.append(chr(elf))
+                hitpoints[chr(elf)] = 200
             elif char == 'G':
                 goblin = ord_a + goblin_id
                 goblin_id += 1
                 cave_row.append(chr(goblin))
+                hitpoints[chr(goblin)] = 200
             else:
                 cave_row.append(char)
         cave.append(cave_row)
-    return cave
+    return cave, hitpoints
 
 
 def cave_to_string(cave, no_ids=False):
@@ -187,29 +152,151 @@ def cave_to_string(cave, no_ids=False):
     return "\n".join("".join(r) for r in cave0)
 
 
+def get_next_move(cave, unit_posn):
+    me = cave[unit_posn.y][unit_posn.x]
+    next_move = None
+    reachable_squares = find_reachable_squares(cave, unit_posn)
+    if reachable_squares:
+        target_square = choose_reachable_square(reachable_squares)
+        paths_to_target_square = find_paths_to_target_square(cave, unit_posn, target_square)
+        next_move = choose_next_move_from_paths(paths_to_target_square)
+    return next_move
+
+
 def move(cave, posn):
     me = cave[posn.y][posn.x]
     for neighbor in neighborhood(cave, posn):
         if is_enemy(me, cave[neighbor.y][neighbor.x]):
-            print(me, 'engaged in combat @', posn)
             return
 
-    print(me, 'moving')
     next_move = get_next_move(cave, posn)
-    cave[posn.y][posn.x] = '.'
-    cave[next_move.y][next_move.x] = me
+    if next_move:
+        print(me, 'moving from', posn, 'to', next_move)
+        cave[posn.y][posn.x] = '.'
+        cave[next_move.y][next_move.x] = me
+        return next_move
 
 
-def tick(cave):
-    moved = set()
+def choose_enemy_to_attack(cave, hitpoints, targets):
+    chosen_enemy = Posn(inf, inf)
+    chosen_enemy_hp = inf
+    for posn in targets:
+        enemy_id = cave[posn.y][posn.x]
+        if hitpoints[enemy_id] < chosen_enemy_hp:
+            chosen_enemy_hp = hitpoints[enemy_id]
+            chosen_enemy = posn
+        elif hitpoints[enemy_id] == chosen_enemy_hp:
+            if posn.y < chosen_enemy.y:
+                chosen_enemy = posn
+            elif posn.y == chosen_enemy.y and posn.x < chosen_enemy.x:
+                chosen_enemy = posn
+    return chosen_enemy
+
+
+def attack(cave, hitpoints, posn):
+    me = cave[posn.y][posn.x]
+    enemy_posns = [p for p in neighborhood(cave, posn) if is_enemy(me, cave[p.y][p.x])]
+    if enemy_posns:
+        target = choose_enemy_to_attack(cave, hitpoints, enemy_posns)
+        target_id = cave[target.y][target.x]
+        hitpoints[target_id] -= 3
+        print(me, posn, 'attacking', target_id, '@', target, 'hp dn to', hitpoints[target_id])
+        if hitpoints[target_id] <= 0:
+            print(target_id, 'has died')
+            cave[target.y][target.x] = '.'
+
+
+def tick_to_string(cave, hitpoints):
+    cave0 = []
+    for row in cave:
+        row0 = []
+        units_in_row = []
+        for c in row:
+            if c.isalpha():
+                units_in_row.append(c)
+                if c.islower():
+                    row0.append('G')
+                else:
+                    row0.append('E')
+            else:
+                row0.append(c)
+        cave_string = "".join(row0)
+        if units_in_row:
+            unit_strings = []
+            for unit in units_in_row:
+                if unit.islower():
+                    utype = 'G'
+                else:
+                    utype = 'E'
+                hp = hitpoints[unit]
+                unit_strings.append("{}({})".format(utype, hp))
+            hp_status = ", ".join(unit_strings)
+            cave_string = cave_string + '   ' + hp_status
+        cave0.append(cave_string)
+    return "\n".join(cave0)
+
+
+def enemies_still_alive(cave, me):
+    for y in range(len(cave)):
+        for x in range(len(cave[0])):
+            other = cave[y][x]
+            if is_enemy(me, other):
+                return True
+    return False
+
+
+def tick(cave, hitpoints):
+    completed_turn = set()
     for y in range(len(cave)):
         for x in range(len(cave[0])):
             if cave[y][x].isalpha():
-                print(moved)
-                if cave[y][x] not in moved:
-                    moved.add(cave[y][x])
-                    move(cave, Posn(x, y))
+                unit_id = cave[y][x]
+                if unit_id not in completed_turn:
+                    print('action', unit_id)
+                    completed_turn.add(unit_id)
+                    posn0 = move(cave, Posn(x, y))
+
+                    if not enemies_still_alive(cave, unit_id):
+                        return False
+
+                    if posn0:
+                        print(unit_id, 'posn0', posn0)
+                        attack(cave, hitpoints, posn0)
+                    else:
+                        attack(cave, hitpoints, Posn(x, y))
+    return True
+
+
+
+
+def flawless_victory(hitpoints):
+    elves = sum(hp for uid, hp in hitpoints.items() if uid.isupper() and hp > 0)
+    goblins = sum(hp for uid, hp in hitpoints.items() if uid.islower() and hp > 0)
+    if elves <= 0:
+        return ('G', goblins)
+    elif goblins <= 0:
+        return ('E', elves)
+    return None
+
+
+def hajime(cave, hitpoints):
+    time = 0
+    victory = flawless_victory(hitpoints)
+    print('init')
     print(cave_to_string(cave))
+    full_round = True
+    while not victory:
+        time += 1
+        print('Tick', time)
+        full_round = tick(cave, hitpoints)
+        # print(tick_to_string(cave, hitpoints))
+        print(cave_to_string(cave))
+        print(hitpoints)
+        victory = flawless_victory(hitpoints)
+    print('victory', victory, 'time', time, 'full round', full_round)
+    if not full_round:
+        time -= 1
+    return victory[1] * time
 
 
 def cave_from_file(filename):
@@ -222,8 +309,8 @@ def cave_from_file(filename):
 def main():
     "Main program."
     import sys
-    cave = parse_cave(sys.stdin.readlines())
-    print(cave_to_string(cave, no_ids=True))
+    cave, hp = parse_cave(sys.stdin.readlines())
+    print(hajime(cave, hp))
 
 
 if __name__ == '__main__':
