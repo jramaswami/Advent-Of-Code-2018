@@ -3,10 +3,15 @@ Advent of Code 2018
 Day 15: Beverage Bandits
 """
 from collections import namedtuple
+from math import inf
 
 
 Posn = namedtuple('Posn', ['x', 'y'])
 
+
+def manhattan_distance(posn0, posn1):
+    "Manhattan distance."
+    return abs(posn0.x - posn1.x) + abs(posn0.y - posn1.y)
 
 def neighborhood(cave, posn):
     "Return neighbors."
@@ -28,28 +33,75 @@ def is_enemy(me, other):
         return me.isupper() != other.isupper()
     return False
 
-def bfs(cave, start):
+def find_reachable_squares(cave, start):
     me = cave[start.y][start.x]
-    print('bfs', me, '@', start)
-    queue = [[start, n] for n in neighborhood(cave, start)]
-    paths_to_enemy = []
-    while queue and not paths_to_enemy:
+    reachables = set([])
+    queue = neighborhood(cave, start)
+    visited = set([start])
+    dist = 0
+    while queue:
         new_queue = []
-        for path in queue:
-            posn = path[-1]
+        dist += 1
+        for posn in queue:
+            visited.add(posn)
             for neighbor in neighborhood(cave, posn):
-                if neighbor in path:
+                if neighbor in visited:
                     continue
                 other = cave[neighbor.y][neighbor.x]
                 if is_enemy(me, other):
-                    path.append(neighbor)
-                    paths_to_enemy.append(path)
+                    reachables.add((dist, posn))
                 elif other == '.':
-                    path0 = list(path)
-                    path0.append(neighbor)
-                    new_queue.append(path0)
+                    new_queue.append(neighbor)
         queue = new_queue
-    return paths_to_enemy
+    return reachables
+
+
+def choose_reachable_square(reachable_squares):
+    "Choose the best reachable square."
+    min_dist = inf
+    chosen_square = None
+    for dist, posn in reachable_squares:
+        if dist < min_dist:
+            chosen_square = posn
+            min_dist = dist
+        if dist == min_dist:
+            if posn.y < chosen_square.y:
+                chosen_square = posn
+            elif posn.y == chosen_square.y and posn.x < chosen_square.x:
+                chosen_square = posn
+    return chosen_square
+
+
+def find_paths_to_target_square(cave, start, target_square):
+    queue = [[start]]
+    paths_to_target_square = []
+    while queue and not paths_to_target_square:
+        new_queue = []
+        for path in queue:
+            posn = path[-1]
+            if posn == target_square:
+                paths_to_target_square.append(path)
+            else:
+                for neighbor in neighborhood(cave, posn):
+                    if neighbor in path:
+                        continue
+                    if cave[neighbor.y][neighbor.x] == '.':
+                        path0 = list(path)
+                        path0.append(neighbor)
+                        new_queue.append(path0)
+        queue = new_queue
+    return paths_to_target_square
+
+
+def choose_next_move_from_paths(paths_to_target_square):
+    chosen_square = Posn(inf, inf)
+    for path in paths_to_target_square:
+        posn = path[1]
+        if posn.y < chosen_square.y:
+            chosen_square = posn
+        elif posn.y == chosen_square.y and posn.x < chosen_square.x:
+            chosen_square = posn
+    return chosen_square
 
 
 def get_best_paths(paths):
