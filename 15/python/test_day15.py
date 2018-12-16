@@ -82,41 +82,57 @@ def test_combat():
     # show_tick_files(actual, expected)
     # print(d15.cave_to_string(cave))
 
-def test_hajime():
+def test_solve_a():
     cave, hp = d15.cave_from_file('../combat_init.txt')
-    assert d15.hajime(cave, hp) == 27730
+    assert d15.solve_a(cave, hp) == 27730
     expected = read_combat_file('../combat47.txt')
     actual = d15.tick_to_string(cave, hp)
     assert actual == expected
 
     cave, hp = d15.cave_from_file('../combatB_init.txt')
-    assert d15.hajime(cave, hp) == 36334
+    assert d15.solve_a(cave, hp) == 36334
     expected = read_combat_file('../combatB_final.txt')
     actual = d15.tick_to_string(cave, hp)
     assert actual == expected
 
     cave, hp = d15.cave_from_file('../combatC_init.txt')
-    assert d15.hajime(cave, hp) == 39514
+    assert d15.solve_a(cave, hp) == 39514
     expected = read_combat_file('../combatC_final.txt')
     actual = d15.tick_to_string(cave, hp)
 
     cave, hp = d15.cave_from_file('../combatD_init.txt')
-    assert d15.hajime(cave, hp) == 27755
+    assert d15.solve_a(cave, hp) == 27755
     expected = read_combat_file('../combatD_final.txt')
     actual = d15.tick_to_string(cave, hp)
     assert actual == expected
 
     cave, hp = d15.cave_from_file('../combatE_init.txt')
-    assert d15.hajime(cave, hp) == 28944
+    assert d15.solve_a(cave, hp) == 28944
     expected = read_combat_file('../combatE_final.txt')
     actual = d15.tick_to_string(cave, hp)
     assert actual == expected
 
     cave, hp = d15.cave_from_file('../combatF_init.txt')
-    assert d15.hajime(cave, hp) == 18740
+    assert d15.solve_a(cave, hp) == 18740
     expected = read_combat_file('../combatF_final.txt')
     actual = d15.tick_to_string(cave, hp)
     assert actual == expected
+
+def test_solve_b():
+    cave, hp = d15.cave_from_file('../elf_power_combatA.txt')
+    assert d15.solve_b(cave, hp) == 4988
+    # expected = read_combat_file('../combatF_final.txt')
+    # actual = d15.tick_to_string(cave, hp)
+    # assert actual == expected
+    cave, hp = d15.cave_from_file('../elf_power_combatB.txt')
+    assert d15.solve_b(cave, hp) == 31284
+    cave, hp = d15.cave_from_file('../elf_power_combatC.txt')
+    assert d15.solve_b(cave, hp) == 3478
+    cave, hp = d15.cave_from_file('../elf_power_combatD.txt')
+    assert d15.solve_b(cave, hp) == 6474
+    cave, hp = d15.cave_from_file('../elf_power_combatE.txt')
+    assert d15.solve_b(cave, hp) == 1140
+
 
     # print(d15.cave_to_string(cave))
 
