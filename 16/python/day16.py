@@ -8,7 +8,6 @@ Sample = namedtuple('Sample', ['before', 'instruction', 'after'])
 Instruction = namedtuple('Instruction', ['opcode', 'a', 'b', 'c'])
 
 
-
 def parse_input_file(input_lines):
     "Parse the input file."
     samples = []
@@ -216,9 +215,32 @@ def solve_a(samples):
     return soln
 
 
-def solve_b():
+def solve_b(samples, program):
     "Solve second part of puzzle."
-    pass
+    opcodes = set()
+    opcode_abbr = [set(OPERATIONS.keys()) for _ in range(16)]
+    for sample in samples:
+        opcodes.add(sample.instruction.opcode)
+        valid_ops = set(find_valid_ops(sample))
+        opcode_abbr[sample.instruction.opcode] &= valid_ops
+
+    while max(len(abbr) for abbr in opcode_abbr) > 1:
+        for opcode, abbr in enumerate(opcode_abbr):
+            if len(abbr) == 1:
+                for opcode0, abbr0 in enumerate(opcode_abbr):
+                    if opcode != opcode0:
+                        abbr0.difference_update(abbr)
+
+    opcode_abbr = [a.pop() for a in opcode_abbr]
+    assert sorted(opcode_abbr) == sorted(OPERATIONS.keys())
+    registers = [0, 0, 0, 0]
+    for line in program:
+        opcode, a, b, c = (int(i) for i in line.split())
+        opabbr = opcode_abbr[opcode]
+        fun = OPERATIONS[opabbr]
+        fun(a, b, c, registers)
+    return(registers[0])
+
 
 
 def main():
@@ -227,6 +249,8 @@ def main():
     input_lines = sys.stdin.readlines()
     samples, program = parse_input_file(input_lines)
     print(solve_a(samples))
+    print(solve_b(samples, program))
+
 
 if __name__ == '__main__':
     main()
