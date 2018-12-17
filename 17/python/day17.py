@@ -39,7 +39,6 @@ def new_map(veins):
     xoff = minx - 1
     ht = maxy + 1
     grid = [['.' for _ in range(wd)] for _ in range(ht)]
-    print('$', xoff, xoff + wd)
     for vn in veins:
         for y in range(vn.miny, vn.maxy + 1):
             for x in range(vn.minx, vn.maxx + 1):
@@ -68,10 +67,8 @@ def fill(mp):
     queue = [Posn(mp.spring_x, 0)]
     while queue:
         new_queue = []
-        print('q', queue)
         for posn in queue:
             me = mp.grid[posn.y][posn.x]
-            print('p', me, posn)
             if me == '+' or me == '|':
                 # down
                 while posn.y + 1 < len(mp.grid) and mp.grid[posn.y + 1][posn.x] == '.':
@@ -94,11 +91,27 @@ def fill(mp):
                 # TODO: change this to go left/right as far as possible instead of between them
                 #       may have to add something to skip queued water.
                 if mp.grid[posnr.y + 1][posnr.x] != '.' and mp.grid[posnl.y + 1][posnl.x] != '.':
-                    for x in range(posnl.x, posnr.x + 1):
+                    x = posnl.x
+                    while mp.grid[posnl.y][x] == '-':
                         mp.grid[posnl.y][x] = '~'
                         if mp.grid[posnl.y - 1][x] == '|':
-                            mp.grid[posnl.y - 1][x] = '-'
                             new_queue.append(Posn(x, posnl.y - 1))
+                            mp.grid[posnl.y - 1][x] = '-'
+                        x += 1
+
+                    x = posnl.x
+                    while mp.grid[posnr.y][x] == '-':
+                        mp.grid[posnr.y][x] = '~'
+                        if mp.grid[posnr.y - 1][x] == '|':
+                            new_queue.append(Posn(x, posnr.y - 1))
+                            mp.grid[posnr.y - 1][x] = '-'
+                        x -= 1
+
+#                     for x in range(posnl.x, posnr.x + 1):
+                        # mp.grid[posnl.y][x] = '~'
+                        # if mp.grid[posnl.y - 1][x] == '|':
+                            # mp.grid[posnl.y - 1][x] = '-'
+                            # new_queue.append(Posn(x, posnl.y - 1))
 
                 if mp.grid[posnr.y + 1][posnr.x] == '.':
                     mp.grid[posnr.y][posnr.x] = '|'
@@ -108,8 +121,8 @@ def fill(mp):
                     mp.grid[posnl.y][posnl.x] = '|'
                     new_queue.append(posnl)
         queue = new_queue
-        print("\n".join("".join(r) for r in mp.grid))
-        print('END')
+    print("\n".join("".join(r) for r in mp.grid))
+    print('END')
 
 
 def solve_a(veins):
