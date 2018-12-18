@@ -54,6 +54,10 @@ def new_map(veins):
     return grid, Posn(spring_x, spring_y)
 
 
+def move_up(grid, posn):
+    if posn.y - 1 > 0:
+        return Posn(posn.x, posn.y - 1)
+
 def move_down(grid, posn):
     if posn.y + 1 < len(grid):
         return Posn(posn.x, posn.y + 1)
@@ -71,6 +75,75 @@ def grid_get(grid, posn):
 
 def grid_set(grid, posn, cell):
     grid[posn.y][posn.x] = cell
+
+def fill_between(grid, left, right, cell="~"):
+    for x in range(left.x + 1, right.x):
+        grid_set(grid, Posn(x, left.y), cell)
+
+
+def find_left(grid, posn):
+    posn = move_left(grid, posn)
+    while grid_get(grid, posn) != '#':
+        if grid_get(grid, move_down(grid, posn)) == EMPTY_SPACE:
+            break
+        posn = move_left(grid, posn)
+    return posn
+
+def find_right(grid, posn):
+    posn = move_right(grid, posn)
+    while grid_get(grid, posn) == EMPTY_SPACE:
+        if grid_get(grid, move_down(grid, posn)) == EMPTY_SPACE:
+            break
+        posn = move_right(grid, posn)
+    return posn
+
+
+def fill0(grid, posn):
+    queue = [posn]
+    path = []
+    while queue:
+        posn = queue.pop()
+        posn = move_down(grid, posn)
+        while posn:
+            cell = grid_get(grid, posn)
+            if cell == '~':
+                break
+            if cell == '#':
+                break
+            grid_set(grid, posn, '~')
+            path.append(posn)
+            posn = move_down(grid, posn)
+
+        if not posn:
+            continue
+
+        posn = path.pop()
+        left = find_left(grid, posn)
+        right = find_right(grid, posn)
+        left_cell = grid_get(grid, left)
+        right_cell = grid_get(grid, right)
+
+        while left_cell == '#' and right_cell == '#':
+            fill_between(grid, left, right)
+            posn = path.pop()
+            left = find_left(grid, posn)
+            right = find_right(grid, posn)
+            left_cell = grid_get(grid, left)
+            right_cell = grid_get(grid, right)
+
+        fill_between(grid, left, posn)
+        fill_between(grid, posn, right)
+
+        if right_cell == EMPTY_SPACE:
+            grid_set(grid, right, '~')
+            queue.append(right)
+
+        if left_cell == EMPTY_SPACE:
+            grid_set(grid, left, '~')
+            queue.append(left)
+
+
+    print_grid(grid)
 
 def fill(grid, posn):
     queue = [posn]
@@ -128,10 +201,53 @@ def fill(grid, posn):
 
     print_grid(grid)
 
+
+
+def drip(grid, spring):
+    posn = move_down(grid, spring)
+    if not posn:
+        return True
+
+    cell = grid_get(grid, posn)
+    while cell != "#" and cell != "~" and cell != '-':
+        grid_set(grid, posn, '|')
+        posn = move_down(grid, posn)
+        cell = grid_get(grid, posn)
+
+    if not posn:
+        return True
+
+    posn = move_up(grid, posn)
+    right = find_right(grid, posn)
+    left = find_left(grid, posn)
+
+    if grid_get(grid, left) == '#' and grid_get(grid, right) == '#':
+        # settle water
+        fill_between(grid, left, right, "~")
+        return False
+    else:
+        fill_between(grid, left, right, "-")
+
+    if grid_get(grid, right) != '#':
+        grid_set(grid, right, '|')
+        while True:
+            print('recurse right')
+            if drip(grid, right):
+                break
+            print_grid(grid)
+
+    if grid_get(grid, left) != '#':
+        grid_set(grid, left, '|')
+
+    print_grid(grid)
+
+
 def solve_a(veins):
     "Solve first part of puzzle."
     grid, spring = new_map(veins)
-    fill(grid, spring)
+    for _ in range(5):
+        drip(grid, spring)
+
     soln = 0
     for y in range(len(grid)):
         for x in range(len(grid[0])):
@@ -148,6 +264,7 @@ def solve_b():
 def main():
     "Main program."
     import sys
+    sys.setrecursionlimit = 60000000
     veins = [parse_scan(ln) for ln in sys.stdin]
     print(solve_a(veins))
 
