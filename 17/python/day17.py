@@ -35,11 +35,14 @@ def new_map(veins):
     "Make a map."
     minx = inf
     maxx = -inf
+    miny = inf
     maxy = -inf
     for vn in veins:
         minx = min(vn.minx, minx)
         maxx = max(vn.maxx, maxx)
+        miny = min(vn.miny, miny)
         maxy = max(vn.maxy, maxy)
+
     wd = maxx - minx + 3
     xoff = minx - 1
     ht = maxy + 1
@@ -51,7 +54,7 @@ def new_map(veins):
 
     spring_x, spring_y = 500 - xoff, 0
     grid[spring_y][spring_x] = '+'
-    return grid, Posn(spring_x, spring_y)
+    return grid, Posn(spring_x, spring_y), miny, maxy
 
 
 def move_up(grid, posn):
@@ -142,31 +145,36 @@ def drip(grid, spring):
                     queue.append(right)
 
 
-def solve_a(veins):
+def solve_a(grid, miny):
     "Solve first part of puzzle."
-    grid, spring = new_map(veins)
-    drip(grid, spring)
-    print_grid(grid)
-
     soln = 0
-    for y in range(len(grid)):
+    for y in range(miny, len(grid)):
         for x in range(len(grid[0])):
-            if grid[y][x] in ['~', '|', '-']:
+            if grid[y][x] in ['~', '|']:
                 soln += 1
     return soln
 
 
-def solve_b():
+def solve_b(grid, miny):
     "Solve second part of puzzle."
-    pass
+    soln = 0
+    for y in range(miny, len(grid)):
+        for x in range(len(grid[0])):
+            if grid[y][x] == '~':
+                soln += 1
+    return soln
 
 
 def main():
     "Main program."
     import sys
-    sys.setrecursionlimit = 60000000000000
     veins = [parse_scan(ln) for ln in sys.stdin]
-    print(solve_a(veins))
+    grid, spring, miny, maxy = new_map(veins)
+    drip(grid, spring)
+    # print_grid(grid)
+    print(solve_a(grid, miny))
+    print(solve_b(grid, miny))
+
 
 
 if __name__ == '__main__':
