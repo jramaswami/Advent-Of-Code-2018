@@ -74,7 +74,6 @@ def grid_get(grid, posn):
     return grid[posn.y][posn.x]
 
 def grid_set(grid, posn, cell):
-    print('grid_set({}, {})'.format(posn, cell))
     grid[posn.y][posn.x] = cell
 
 def fill_between(grid, left, right, cell="~"):
@@ -82,47 +81,66 @@ def fill_between(grid, left, right, cell="~"):
         grid_set(grid, Posn(x, left.y), cell)
 
 def find_left(grid, posn):
-    print('find_left({})'.format(posn))
+    under = move_down(grid, posn)
+    if grid_get(grid, under) == '|' or grid_get(grid, under) == EMPTY_SPACE:
+        return posn
     posn = move_left(grid, posn)
     while grid_get(grid, posn) != '#':
-        if grid_get(grid, move_down(grid, posn)) == EMPTY_SPACE:
-            break
+        under = move_down(grid, posn)
+        if grid_get(grid, under) == '|' or grid_get(grid, under) == EMPTY_SPACE:
+            return posn
         posn = move_left(grid, posn)
+        if posn is None:
+            return posn
     return posn
 
 def find_right(grid, posn):
-    posn = move_right(grid, posn)
-    while grid_get(grid, posn) == EMPTY_SPACE:
-        if grid_get(grid, move_down(grid, posn)) == EMPTY_SPACE:
+    under = move_down(grid, posn)
+    if grid_get(grid, under) == '|' or grid_get(grid, under) == EMPTY_SPACE:
+        posn = move_right(grid, posn)
+    while grid_get(grid, posn) != '#':
+        under = move_down(grid, posn)
+        if grid_get(grid, under) == '|' or grid_get(grid, under) == EMPTY_SPACE:
             break
         posn = move_right(grid, posn)
+        if posn is None:
+            return posn
     return posn
 
 
 def drip(grid, spring):
-    path = []
+    parent = {}
     queue = [spring]
     while queue:
-        print('Path', path)
-        print('Queue', queue)
         posn = queue.pop()
-        print('P', posn)
         down = move_down(grid, posn)
-        print('down', down, grid_get(grid, down))
+
+        if down is None:
+            continue
+
         if down and grid_get(grid, down) != "#" and grid_get(grid, down) != "~":
             grid_set(grid, down, '|')
-            path.append(down)
+            parent[down] = posn
             queue.append(down)
         else:
             right = find_right(grid, posn)
             left = find_left(grid, posn)
-            print("L/R", left, grid_get(grid, left), right, grid_get(grid, right))
+            if left is None or right is None:
+                break
             if grid_get(grid, left) == '#' and grid_get(grid, right) == '#':
                 fill_between(grid, left, right, "~")
-                path.pop()
-                queue.append(path[-1])
+                queue.append(parent[posn])
             else:
                 fill_between(grid, left, right, "|")
+                if grid_get(grid, left) == EMPTY_SPACE:
+                    grid_set(grid, left, '|')
+                    parent[left] = posn
+                    queue.append(left)
+                if grid_get(grid, right) == EMPTY_SPACE:
+                    grid_set(grid, right, '|')
+                    parent[right] = posn
+                    queue.append(right)
+
 
 def solve_a(veins):
     "Solve first part of puzzle."
