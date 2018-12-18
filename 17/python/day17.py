@@ -202,51 +202,54 @@ def fill(grid, posn):
     print_grid(grid)
 
 
-
 def drip(grid, spring):
-    posn = move_down(grid, spring)
-    if not posn:
-        return True
+    queue = [spring]
+    settled = False
+    while queue:
+        new_queue = []
+        print('Q', queue)
+        while queue:
+            posn = queue.pop()
+            posn0 = move_down(grid, posn)
+            if posn0:
+                cell = grid_get(grid, posn0)
+                print('dn', posn0, cell)
+                if cell != "#" and cell != "~":
+                    grid_set(grid, posn0, '|')
+                    new_queue.append(posn0)
+                    continue
 
-    cell = grid_get(grid, posn)
-    while cell != "#" and cell != "~" and cell != '-':
-        grid_set(grid, posn, '|')
-        posn = move_down(grid, posn)
-        cell = grid_get(grid, posn)
+            if not posn0:
+                continue
 
-    if not posn:
-        return True
+            right = find_right(grid, posn)
+            left = find_left(grid, posn)
+            print('P', posn, 'L', left, 'R', right)
 
-    posn = move_up(grid, posn)
-    right = find_right(grid, posn)
-    left = find_left(grid, posn)
+            if grid_get(grid, left) == '#' and grid_get(grid, right) == '#':
+                # settle water
+                fill_between(grid, left, right, "~")
+                settled = True
+            else:
+                fill_between(grid, left, right, "|")
+                if grid_get(grid, left) != '#':
+                    grid_set(grid, left, '|')
+                    new_queue.append(left)
+                if grid_get(grid, right) != '#':
+                    grid_set(grid, right, '|')
+                    new_queue.append(right)
+                settled = True
 
-    if grid_get(grid, left) == '#' and grid_get(grid, right) == '#':
-        # settle water
-        fill_between(grid, left, right, "~")
-        return False
-    else:
-        fill_between(grid, left, right, "-")
+        queue = new_queue
 
-    if grid_get(grid, right) != '#':
-        grid_set(grid, right, '|')
-        while True:
-            print('recurse right')
-            if drip(grid, right):
-                break
-            print_grid(grid)
-
-    if grid_get(grid, left) != '#':
-        grid_set(grid, left, '|')
-
-    print_grid(grid)
+    return settled
 
 
 def solve_a(veins):
     "Solve first part of puzzle."
     grid, spring = new_map(veins)
-    for _ in range(5):
-        drip(grid, spring)
+    while drip(grid, spring):
+        print_grid(grid)
 
     soln = 0
     for y in range(len(grid)):
