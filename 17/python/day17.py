@@ -12,6 +12,7 @@ EMPTY_SPACE = ' '
 
 def print_grid(grid):
     print("\n".join("".join(r) for r in grid))
+    print()
 
 def parse_scan(input_line):
     "Parse a scan from input line."
@@ -53,123 +54,90 @@ def new_map(veins):
     return grid, Posn(spring_x, spring_y)
 
 
-def fill_down(grid, posn):
-    "Find what is down."
-    # print('fill_down', posn)
-    while posn.y + 1 < len(grid) and grid[posn.y + 1][posn.x] == EMPTY_SPACE:
-        grid[posn.y + 1][posn.x] = '~'
-        posn = Posn(posn.x, posn.y + 1)
+def move_down(grid, posn):
     if posn.y + 1 < len(grid):
-        return grid[posn.y + 1][posn.x], posn
-    else:
-        return '!', posn
+        return Posn(posn.x, posn.y + 1)
 
+def move_left(grid, posn):
+    if posn.x - 1 >= 0:
+        return Posn(posn.x - 1, posn.y)
 
-def fill_left(grid, posn):
-    "Find what is left."
-    print('fill_left', posn)
-    while grid[posn.y][posn.x - 1] == EMPTY_SPACE and grid[posn.y + 1][posn.x - 1] in ['#', '~']:
-        grid[posn.y][posn.x - 1] = '~'
-        posn = Posn(posn.x - 1, posn.y)
-    if grid[posn.y][posn.x - 1] == EMPTY_SPACE:
-        grid[posn.y][posn.x - 1] = '~'
-        return EMPTY_SPACE, Posn(posn.x - 1, posn.y)
-    return grid[posn.y][posn.x - 1], posn
+def move_right(grid, posn):
+    if posn.x + 1 < len(grid[0]):
+        return Posn(posn.x + 1, posn.y)
 
+def grid_get(grid, posn):
+    return grid[posn.y][posn.x]
 
-def fill_right(grid, posn):
-    "Find what is right."
-    print('fill_right', posn)
-    while grid[posn.y][posn.x + 1] == EMPTY_SPACE and grid[posn.y + 1][posn.x + 1] in ['#', '~']:
-        grid[posn.y][posn.x + 1] = '~'
-        posn = Posn(posn.x + 1, posn.y)
-    if grid[posn.y][posn.x + 1] == EMPTY_SPACE:
-        grid[posn.y][posn.x + 1] = '~'
-        return EMPTY_SPACE, Posn(posn.x + 1, posn.y)
-    return grid[posn.y][posn.x + 1], posn
+def grid_set(grid, posn, cell):
+    grid[posn.y][posn.x] = cell
 
 def fill(grid, posn):
     queue = [posn]
     while queue:
-        new_queue = []
-        for posn in queue:
-            print("P", posn)
-            marker0, posn0 = fill_down(grid, posn)
-            if marker0 == '!':
-                continue
-            marker1, posn1 = fill_left(grid, posn0)
-            print(posn1, 'left marker', marker1)
-            if marker1 == EMPTY_SPACE:
-                new_queue.append(posn1)
-            marker2, posn2 = fill_right(grid, posn0)
-            print(posn2, 'right marker', marker2)
-            if marker2 == EMPTY_SPACE:
-                new_queue.append(posn2)
-            if marker1 != EMPTY_SPACE and marker2 != EMPTY_SPACE:
-                new_queue.append(Posn(posn0.x, posn0.y - 1))
-        queue = new_queue
-        print_grid(grid)
-
-
-def fill0(grid, posn):
-    path = [posn]
-    for _ in range(5):
-        print_grid(grid)
-        print(path)
-        # Down?
-        posn = path[-1]
-        print(posn, len(grid), len(grid[0]))
-        while posn.y + 1 < len(grid) and grid[posn.y + 1][posn.x] == EMPTY_SPACE:
-            print('dn', posn)
-            grid[posn.y + 1][posn.x] = '~'
-            posn = Posn(posn.x, posn.y)
-        if posn.y >= len(grid):
-            path.pop()
-            continue
-
-        if posn != path[-1]:
-            path.append(Posn(posn.x, posn.y + 1))
-            continue
-
-        # Left?
-        posn = path[-1]
-        while grid[posn.y][posn.x - 1] == EMPTY_SPACE:
-            grid[posn.y][posn.x - 1] = '~'
-            if grid[posn.y + 1][posn.x - 1] == EMPTY_SPACE:
+        # print('Q', queue)
+        posn = queue.pop()
+        my_down_points = [posn]
+        posn = move_down(grid, posn)
+        while posn:
+            cell = grid_get(grid, posn)
+            if cell == '~':
                 break
-            posn = Posn(posn.x + 1, posn.y)
-        if grid[posn.y + 1][posn.x - 1] == EMPTY_SPACE:
-            path.append(Posn(posn.x + 1, posn.y))
-            continue
-
-        # Right?
-        posn = path[-1]
-        while grid[posn.y][posn.x + 1] == EMPTY_SPACE:
-            grid[posn.y][posn.x + 1] = '~'
-            if grid[posn.y + 1][posn.x + 1] == EMPTY_SPACE:
+            if cell == '#':
                 break
-            posn = Posn(posn.x + 1, posn.y)
-        if grid[posn.y + 1][posn.x + 1] == EMPTY_SPACE:
-            path.append(Posn(posn.x + 1, posn.y))
+            grid_set(grid, posn, '~')
+            my_down_points.append(posn)
+            posn = move_down(grid, posn)
+
+        if not posn:
             continue
 
-        path.pop()
+        right_escape = left_escape = False
 
+        while not (right_escape or left_escape) and my_down_points:
+            # print_grid(grid)
+            # print(my_down_points)
+            posn = my_down_points.pop()
+            posn0 = move_left(grid, posn)
+            while posn0:
+                cell = grid_get(grid, posn0)
+                if cell == '#':
+                    break
+                grid_set(grid, posn0, '~')
+                if grid_get(grid, move_down(grid, posn0)) == EMPTY_SPACE:
+                    queue.append(posn0)
+                    # fill(grid, posn0)
+                    left_escape = True
+                    break
+                posn0 = move_left(grid, posn0)
 
+            posn0 = move_right(grid, posn)
+            while posn0:
+                cell = grid_get(grid, posn0)
+                if cell == '#':
+                    break
+                grid_set(grid, posn0, '~')
+                if grid_get(grid, move_down(grid, posn0)) == EMPTY_SPACE:
+                    queue.append(posn0)
+                    # fill(grid, posn0)
+                    right_escape = True
+                    break
+                posn0 = move_right(grid, posn0)
 
+        # print_grid(grid)
 
+    print_grid(grid)
 
 def solve_a(veins):
     "Solve first part of puzzle."
     grid, spring = new_map(veins)
-    fill0(grid, spring)
+    fill(grid, spring)
     soln = 0
     for y in range(len(grid)):
         for x in range(len(grid[0])):
             if grid[y][x] in ['~', '|', '-']:
                 soln += 1
     return soln
-
 
 
 def solve_b():
