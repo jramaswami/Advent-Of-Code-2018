@@ -96,44 +96,48 @@ def find_right(grid, posn):
         posn = move_right(grid, posn)
     return posn
 
-def drip(grid, posn):
-    print('drip({})'.format(posn))
+def drip(grid, spring):
+    path = [spring]
+    while path:
+        posn = path[-1]
+        print('working from {}'.format(posn))
+        down = move_down(grid, posn)
+        if down:
+            cell = grid_get(grid, down)
+            # print('dn', down, cell)
+            if cell != "#" and cell != "~":
+                grid_set(grid, down, '|')
+                path.append(down)
+                continue
+        else:
+            path.pop()
+            continue
 
-    down = move_down(grid, posn)
-    if down:
         cell = grid_get(grid, down)
-        # print('dn', down, cell)
         if cell != "#" and cell != "~":
-            grid_set(grid, down, '|')
-            drip(grid, down)
-    else:
-        # print('reached end from', posn)
+            path.pop()
+            continue
+
+        right = find_right(grid, posn)
+        left = find_left(grid, posn)
+
+        if grid_get(grid, left) == '#' and grid_get(grid, right) == '#':
+            # print('P', posn, 'L', left, 'R', right, 'filling')
+            # settle water
+            fill_between(grid, left, right, "~")
+            # print_grid(grid)
+            path.pop()
+            continue
+        else:
+            # print('P', posn, 'L', left, 'R', right, 'overflow')
+            fill_between(grid, left, right, "|")
+            if grid_get(grid, left) != '#':
+                grid_set(grid, left, '|')
+                path.append(left)
+            if grid_get(grid, right) != '#':
+                grid_set(grid, right, '|')
+                path.append(right)
         # print_grid(grid)
-        return
-
-    cell = grid_get(grid, down)
-    if cell != "#" and cell != "~":
-        return
-
-    right = find_right(grid, posn)
-    left = find_left(grid, posn)
-
-    if grid_get(grid, left) == '#' and grid_get(grid, right) == '#':
-        # print('P', posn, 'L', left, 'R', right, 'filling')
-        # settle water
-        fill_between(grid, left, right, "~")
-        # print_grid(grid)
-        return True
-    else:
-        # print('P', posn, 'L', left, 'R', right, 'overflow')
-        fill_between(grid, left, right, "|")
-        if grid_get(grid, left) != '#':
-            grid_set(grid, left, '|')
-            drip(grid, left)
-        if grid_get(grid, right) != '#':
-            grid_set(grid, right, '|')
-            drip(grid, right)
-    # print_grid(grid)
 
 
 def solve_a(veins):
