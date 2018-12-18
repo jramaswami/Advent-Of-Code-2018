@@ -80,12 +80,9 @@ def fill_between(grid, left, right, cell="~"):
     for x in range(left.x + 1, right.x):
         grid_set(grid, Posn(x, left.y), cell)
 
-
 def find_left(grid, posn):
-    print('find_left({})'.format(posn))
     posn = move_left(grid, posn)
     while grid_get(grid, posn) != '#':
-        print('moved left to {}'.format(posn))
         if grid_get(grid, move_down(grid, posn)) == EMPTY_SPACE:
             break
         posn = move_left(grid, posn)
@@ -98,111 +95,6 @@ def find_right(grid, posn):
             break
         posn = move_right(grid, posn)
     return posn
-
-
-def fill0(grid, posn):
-    queue = [posn]
-    path = []
-    while queue:
-        posn = queue.pop()
-        posn = move_down(grid, posn)
-        while posn:
-            cell = grid_get(grid, posn)
-            if cell == '~':
-                break
-            if cell == '#':
-                break
-            grid_set(grid, posn, '~')
-            path.append(posn)
-            posn = move_down(grid, posn)
-
-        if not posn:
-            continue
-
-        posn = path.pop()
-        left = find_left(grid, posn)
-        right = find_right(grid, posn)
-        left_cell = grid_get(grid, left)
-        right_cell = grid_get(grid, right)
-
-        while left_cell == '#' and right_cell == '#':
-            fill_between(grid, left, right)
-            posn = path.pop()
-            left = find_left(grid, posn)
-            right = find_right(grid, posn)
-            left_cell = grid_get(grid, left)
-            right_cell = grid_get(grid, right)
-
-        fill_between(grid, left, posn)
-        fill_between(grid, posn, right)
-
-        if right_cell == EMPTY_SPACE:
-            grid_set(grid, right, '~')
-            queue.append(right)
-
-        if left_cell == EMPTY_SPACE:
-            grid_set(grid, left, '~')
-            queue.append(left)
-
-
-    print_grid(grid)
-
-def fill(grid, posn):
-    queue = [posn]
-    while queue:
-        # print('Q', queue)
-        posn = queue.pop()
-        my_down_points = [posn]
-        posn = move_down(grid, posn)
-        while posn:
-            cell = grid_get(grid, posn)
-            if cell == '~':
-                break
-            if cell == '#':
-                break
-            grid_set(grid, posn, '~')
-            my_down_points.append(posn)
-            posn = move_down(grid, posn)
-
-        if not posn:
-            continue
-
-        right_escape = left_escape = False
-
-        while not (right_escape or left_escape) and my_down_points:
-            # print_grid(grid)
-            # print(my_down_points)
-            posn = my_down_points.pop()
-            posn0 = move_left(grid, posn)
-            while posn0:
-                cell = grid_get(grid, posn0)
-                if cell == '#':
-                    break
-                grid_set(grid, posn0, '~')
-                if grid_get(grid, move_down(grid, posn0)) == EMPTY_SPACE:
-                    queue.append(posn0)
-                    # fill(grid, posn0)
-                    left_escape = True
-                    break
-                posn0 = move_left(grid, posn0)
-
-            posn0 = move_right(grid, posn)
-            while posn0:
-                cell = grid_get(grid, posn0)
-                if cell == '#':
-                    break
-                grid_set(grid, posn0, '~')
-                if grid_get(grid, move_down(grid, posn0)) == EMPTY_SPACE:
-                    queue.append(posn0)
-                    # fill(grid, posn0)
-                    right_escape = True
-                    break
-                posn0 = move_right(grid, posn0)
-
-        # print_grid(grid)
-
-    print_grid(grid)
-
 
 def drip(grid, posn):
     print('drip({})'.format(posn))
@@ -230,7 +122,7 @@ def drip(grid, posn):
         # print('P', posn, 'L', left, 'R', right, 'filling')
         # settle water
         fill_between(grid, left, right, "~")
-        print_grid(grid)
+        # print_grid(grid)
         return True
     else:
         # print('P', posn, 'L', left, 'R', right, 'overflow')
@@ -266,7 +158,7 @@ def solve_b():
 def main():
     "Main program."
     import sys
-    sys.setrecursionlimit = 60000000
+    sys.setrecursionlimit = 60000000000000
     veins = [parse_scan(ln) for ln in sys.stdin]
     print(solve_a(veins))
 
