@@ -2,7 +2,7 @@
 Advent of Code 2018
 Day 19: Go With The Flow
 """
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 
 # Addition:
@@ -171,16 +171,17 @@ def parse_instruction(instruction):
     a, b, c = (int(i) for i in tokens[1:])
     return Instruction(abbr, fun, a, b, c)
 
+
 def execute(instructions, instruction_ptr, instruction_reg, registers):
     "Execute the given instruction."
     if instruction_ptr >= len(instructions):
-        print("ip={} {} HALT".format(instruction_ptr, registers))
+        # print("ip={} {} HALT".format(instruction_ptr, registers))
         return -1
 
     registers[instruction_reg] = instruction_ptr
     instruction = instructions[instruction_ptr]
     # output = "ip={} {} {} {} {} {}".format(instruction_ptr, registers, instruction.abbr,
-    #                                        instruction.a, instruction.b, instruction.c)
+    #                                       instruction.a, instruction.b, instruction.c)
     instruction.fun(instruction.a, instruction.b, instruction.c, registers)
     # print("{} {}".format(output, registers))
 
@@ -192,26 +193,46 @@ def execute(instructions, instruction_ptr, instruction_reg, registers):
 def run_program(instructions, instruction_reg, registers):
     "Run the program"
     instruction_ptr = 0
-    cycles = 0
     while instruction_ptr >= 0:
-        cycles += 1
         instruction_ptr = execute(instructions, instruction_ptr, instruction_reg, registers)
-        if cycles % 1000000 == 0:
-            print(cycles)
+
+
+def generate_dot(instructions, instruction_reg, registers):
+    """
+    Generates instructions for dot file for
+    graphviz to generate call graph.
+    """
+    instruction_ptr = 0
+    adj = defaultdict(set)
+    while instruction_ptr >= 0:
+        instruction_ptr0 = execute(instructions, instruction_ptr, instruction_reg, registers)
+        adj[instruction_ptr].add(instruction_ptr0)
+        instruction_ptr = instruction_ptr0
+
+    print('digraph {')
+    for u, children in adj.items():
+        for v in children:
+            print('\t', u, '->', v)
+    print('}')
 
 
 def solve_a(instructions, instruction_reg):
-    "Solve first part of puzzle."
+    "Solve first part of puzzle:  Actually executes assembly code."
     registers = [0, 0, 0, 0, 0, 0]
     run_program(instructions, instruction_reg, registers)
     return registers[0]
 
 
-def solve_b(instructions, instruction_reg):
-    "Solve second part of puzzle."
-    registers = [1, 0, 0, 0, 0, 0]
-    run_program(instructions, instruction_reg, registers)
-    return registers[0]
+def solve_b(reg1):
+    """"
+    Solve second part of puzzle: Assembly program is summing the
+    divisors of the initial number in register 1.
+    """
+    soln = 0
+    for n in range(1, reg1 + 1):
+        if reg1 % n == 0:
+            soln += n
+    return(soln)
 
 
 def main():
@@ -219,8 +240,11 @@ def main():
     import sys
     instruction_reg = int(sys.stdin.readline().strip()[4:])
     instructions = [parse_instruction(ln.strip()) for ln in sys.stdin]
+    # generate_dot(instructions, instruction_reg, [0, 0, 0, 0, 0, 0])
     print(solve_a(instructions, instruction_reg))
-    print(solve_b(instructions, instruction_reg))
+    # register1 = 867 # a
+    register1 = 10551267 #b
+    print(solve_b(register1))
 
 
 if __name__ == '__main__':
