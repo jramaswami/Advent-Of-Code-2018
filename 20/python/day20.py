@@ -2,7 +2,7 @@
 Advent of Code 2018
 Day 20: A Regular Map
 """
-from collections import Counter, namedtuple
+from collections import Counter, namedtuple, deque
 from math import inf
 
 Posn = namedtuple('Posn', ['x', 'y'])
@@ -86,35 +86,75 @@ def draw_map(regex, grid):
     print(grid)
     print(grid_string(grid))
 
-def do_move(move, level):
-    print('\t'*level, 'm', move)
-
-def do_branch(branch, level):
-    index = 0
+def get_options(branch):
     options = []
-    me = ''
+    start = 0
+    index = 0
+    pstack = []
     while index < len(branch):
-        if branch[index] == '(':
-            end_index = branch.rfind(')')
-            for opt in do_branch(branch[index+1:end_index], level + 1):
-                options.append(me + opt)
-            index = end_index
-            me = ''
-            if end_index != len(branch) - 2:
-                print('BOO', end_index, len(branch) - 2, level)
-        elif branch[index] == '|':
-            options.append(me)
-            print('|', me, options)
-            me = ''
-        else:
-            me = me + branch[index]
+        c = branch[index]
+        if not pstack and c == '|':
+            options.append(branch[start:index])
+            start = index + 1
+        elif c == '(':
+            pstack.append('(')
+        elif  c == ')':
+            pstack.pop()
         index += 1
-    if me:
-        options.append(me)
-        print('|', me, options)
-    print('\t'*level, 'b', branch, options)
+    options.append(branch[start:index])
+    assert not pstack
+    assert options
     return options
 
+
+def dfs(branch, path):
+    index = 0
+    queue = [path]
+    while index < len(branch):
+        new_queue = []
+        path = queue.pop()
+        if branch[index].isalpha():
+            path += branch[index]
+            new_queue.append(path)
+        elif branch[index] == '$':
+            new_queue.append(path)
+            index += 1
+        if branch[index] == '(':
+            end_index = branch.rfind(')')
+            for opts in get_options(branch[index+1:branch.rfind(')')]):
+                dfs(branch, path)
+
+            index = end_index
+        queue = new_queue
+        index += 1
+
+
+def parse(tokens, path):
+    if not tokens:
+        print("".join(path))
+        return
+    t = tokens.popleft()
+    if t == '^':
+        path.append('^')
+        parse(tokens, path)
+    elif t == '(':
+        parse(tokens, path)
+    elif t == ')':
+        path.pop()
+        parse(tokens, path)
+    elif t == '$':
+        path.append('$')
+        parse(tokens, path)
+    elif t == '|':
+        path.pop()
+        parse(tokens, path)
+    else:
+        path.append(t)
+        parse(tokens, path)
+
+def tokenize(chars: str) -> list:
+    "Convert a string of characters into a list of tokens."
+    return deque(chars.replace('(', ' ( ').replace(')', ' ) ').replace('|', ' | ').replace('$', ' $ ').replace('^', ' ^ ').split())
 
 def main():
     "Main program."
