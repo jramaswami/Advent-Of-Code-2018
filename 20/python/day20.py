@@ -92,13 +92,13 @@ def get_options(branch):
     index = 0
     pstack = []
     while index < len(branch):
-        c = branch[index]
-        if not pstack and c == '|':
+        t = branch[index]
+        if not pstack and t == '|':
             options.append(branch[start:index])
             start = index + 1
-        elif c == '(':
+        elif t == '(':
             pstack.append('(')
-        elif  c == ')':
+        elif t == ')':
             pstack.pop()
         index += 1
     options.append(branch[start:index])
@@ -129,32 +129,35 @@ def dfs(branch, path):
         index += 1
 
 
-def parse(tokens, path):
+def parse(tokens, level):
     if not tokens:
-        print("".join(path))
         return
-    t = tokens.popleft()
-    if t == '^':
-        path.append('^')
-        parse(tokens, path)
-    elif t == '(':
-        parse(tokens, path)
-    elif t == ')':
-        path.pop()
-        parse(tokens, path)
-    elif t == '$':
-        path.append('$')
-        parse(tokens, path)
-    elif t == '|':
-        path.pop()
-        parse(tokens, path)
+    lid, lhs = tokens.popleft()
+    if lhs == '(':
+        level += 1
+        print('\t'*level, lhs)
+        parse(tokens, level)
+    elif lhs == ')':
+        print('\t'*level, lhs)
+        level -= 1
+        parse(tokens, level)
+    elif lhs == '$':
+        level -= 1
+        parse(tokens, level)
+    elif lhs == '|':
+        print('\t'*level, lhs)
+        parse(tokens, level)
     else:
-        path.append(t)
-        parse(tokens, path)
+        print('\t'*level, lhs, lid)
+        parse(tokens, level)
 
 def tokenize(chars: str) -> list:
     "Convert a string of characters into a list of tokens."
-    return deque(chars.replace('(', ' ( ').replace(')', ' ) ').replace('|', ' | ').replace('$', ' $ ').replace('^', ' ^ ').split())
+    chars = chars.replace('|)','|.)')
+    chars = chars.replace('(', ' ( ')
+    chars = chars.replace(')', ' ) ')
+    chars = chars.replace('|', ' | ').split()
+    return deque((i, c) for i, c in enumerate(chars))
 
 def main():
     "Main program."
