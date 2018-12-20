@@ -129,27 +129,25 @@ def dfs(branch, path):
         index += 1
 
 
-def parse(tokens, level):
-    if not tokens:
-        return
-    lid, lhs = tokens.popleft()
-    if lhs == '(':
-        level += 1
-        print('\t'*level, lhs)
-        parse(tokens, level)
-    elif lhs == ')':
-        print('\t'*level, lhs)
-        level -= 1
-        parse(tokens, level)
-    elif lhs == '$':
-        level -= 1
-        parse(tokens, level)
-    elif lhs == '|':
-        print('\t'*level, lhs)
-        parse(tokens, level)
+def split_regex(regex):
+    left_paren = regex.find('(')
+    if left_paren >= 0:
+        right_paren = regex.rfind(')')
+        assert right_paren >= 0
+        left = regex[0:left_paren]
+        middle = regex[left_paren+1:right_paren]
+        right = regex[right_paren+1:]
+        return left, middle, right
     else:
-        print('\t'*level, lhs, lid)
-        parse(tokens, level)
+        return regex, '', ''
+
+def parse_regex(regex, tokens, parent, child):
+    left, middle, right = split_regex
+    tokens.append(left)
+    if right:
+        tokens.append(right)
+
+
 
 def tokenize(chars: str) -> list:
     "Convert a string of characters into a list of tokens."
@@ -157,7 +155,26 @@ def tokenize(chars: str) -> list:
     chars = chars.replace('(', ' ( ')
     chars = chars.replace(')', ' ) ')
     chars = chars.replace('|', ' | ').split()
-    return deque((i, c) for i, c in enumerate(chars))
+    return chars
+
+def read_from_tokens(tokens: list):
+    "Read an expression from a sequence of tokens."
+    if len(tokens) == 0:
+        raise SyntaxError('unexpected EOF')
+    token = tokens.pop(0)
+    if token == '|':
+        token = tokens.pop(0)
+
+    if token == '(':
+        L = []
+        while tokens[0] != ')':
+            L.append(read_from_tokens(tokens))
+        tokens.pop(0) # pop off ')'
+        return L
+    elif token == ')':
+        raise SyntaxError('unexpected )')
+    else:
+        return token
 
 def main():
     "Main program."
