@@ -4,7 +4,7 @@ Day 23: Experimental Emergency Teleportation
 """
 from collections import namedtuple, defaultdict
 from operator import attrgetter
-from tqdm import tqdm
+
 
 Posn = namedtuple('Posn', ['x', 'y', 'z'])
 Nanobot = namedtuple('Nanobot', ['posn', 'radius'])
@@ -15,6 +15,7 @@ def manhattan_distance_pt(posn, nanobot):
     return abs(posn.x - nanobot.posn.x) + \
            abs(posn.y - nanobot.posn.y) + \
            abs(posn.z - nanobot.posn.z)
+
 
 def manhattan_distance(nanobot0, nanobot1):
     "Return manhattan distance between nanobots."
@@ -44,59 +45,47 @@ def solve_a(nanobots):
     return sum(1 for n in nanobots if in_range(nanobot0, n))
 
 
-def maximal_clique(cxs, nanobots):
-    max_cq = None
-    max_len = 0
-    for i, start in enumerate(nanobots):
-        print(i, start, '...', end=' ')
-        clique = set([start])
-        for v in cxs:
-            if v in clique:
-                continue
-            elif all(u in cxs[v] for u in clique):
-                clique.add(v)
-
-        print(len(clique))
-        if len(clique) > max_len:
-            max_len = len(clique)
-            max_cq = clique
-
-    return max_cq
+def get_maximal_clique(overlapping_spheres, nanobots):
+    "Return the maximal clique."
+    clique = set([nanobots[0]])
+    for nanobot in overlapping_spheres:
+        if nanobot in clique:
+            continue
+        elif all(n in overlapping_spheres[nanobot] for n in clique):
+            clique.add(nanobot)
+    return clique
 
 
 def solve_b(nanobots):
     "Solve second part of puzzle."
-    print('Looking for overlapping spheres ...')
-    cxs = defaultdict(set)
+    # Look for overlapping spheres
+    overlapping_spheres = defaultdict(set)
     for n0 in nanobots:
         for n1 in nanobots:
             if n1 == n0:
                 continue
             if manhattan_distance(n0, n1) <= n0.radius + n1.radius:
-                cxs[n0].add(n1)
+                overlapping_spheres[n0].add(n1)
 
-    nn = None
-    nd = 0
-    print('Looking for maximal clique ...')
-    mx_cq = maximal_clique(cxs, nanobots)
-    print('Computing max distance in clique ...')
-    for n in mx_cq:
-        d = manhattan_distance_pt(Posn(0, 0, 0), n) - n.radius
-        if d > nd:
-            nn = n
-            nd = d
-        print(n, d)
-    print('$', nn, nd)
-
+    farthest_distance = 0
+    #  Look for maximal clique
+    maximal_clique = get_maximal_clique(overlapping_spheres, nanobots)
+    # Compute max distance in clique
+    for nanobot in maximal_clique:
+        # d = manhattan_distance_pt(Posn(0, 0, 0), n) - n.radius
+        distance = sum(abs(p) for p in nanobot.posn) - nanobot.radius
+        if distance > farthest_distance:
+            farthest_distance = distance
+    return farthest_distance
 
 
 def main():
     "Main program."
     import sys
     nanobots = [parse_nanobot(ln) for ln in sys.stdin]
-    print(len(nanobots), 'nanobots')
-    # print(solve_a(nanobots))
+    print(solve_a(nanobots))
     print(solve_b(nanobots))
+
 
 if __name__ == '__main__':
     main()

@@ -35,6 +35,22 @@ def test_in_range():
 
 def test_solve_a():
     "Test solve_a()"
-    with open('../test23.txt') as infile:
+    with open('../test23a.txt') as infile:
         nanobots = [d23.parse_nanobot(ln) for ln in infile.readlines()]
     assert d23.solve_a(nanobots) == 7
+    with open('../input23.txt') as infile:
+        nanobots = [d23.parse_nanobot(ln) for ln in infile.readlines()]
+    assert d23.solve_a(nanobots) == 588
+
+
+def test_solve_b():
+    "Test solve_b()"
+    with open('../test23b.txt') as infile:
+        nanobots = [d23.parse_nanobot(ln) for ln in infile.readlines()]
+    assert d23.solve_b(nanobots) == 36
+    with open('../input23.txt') as infile:
+        nanobots = [d23.parse_nanobot(ln) for ln in infile.readlines()]
+    assert d23.solve_b(nanobots) == 111227643
+
+
+
