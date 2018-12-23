@@ -47,7 +47,8 @@ def solve_a(nanobots):
 def maximal_clique(cxs, nanobots):
     max_cq = None
     max_len = 0
-    for start in nanobots:
+    for i, start in enumerate(nanobots):
+        print(i, start, '...', end=' ')
         clique = set([start])
         for v in cxs:
             if v in clique:
@@ -55,6 +56,7 @@ def maximal_clique(cxs, nanobots):
             elif all(u in cxs[v] for u in clique):
                 clique.add(v)
 
+        print(len(clique))
         if len(clique) > max_len:
             max_len = len(clique)
             max_cq = clique
@@ -64,18 +66,20 @@ def maximal_clique(cxs, nanobots):
 
 def solve_b(nanobots):
     "Solve second part of puzzle."
+    print('Looking for overlapping spheres ...')
     cxs = defaultdict(set)
     for n0 in nanobots:
         for n1 in nanobots:
             if n1 == n0:
                 continue
-            if manhattan_distance(n0, n1) <= n0.radius:
+            if manhattan_distance(n0, n1) <= n0.radius + n1.radius:
                 cxs[n0].add(n1)
 
     nn = None
     nd = 0
+    print('Looking for maximal clique ...')
     mx_cq = maximal_clique(cxs, nanobots)
-    print(mx_cq)
+    print('Computing max distance in clique ...')
     for n in mx_cq:
         d = manhattan_distance_pt(Posn(0, 0, 0), n) - n.radius
         if d > nd:
