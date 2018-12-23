@@ -42,6 +42,7 @@ def solve_b(nanobots):
     events_x = []
     max_z_box = 0
     max_coords = None
+    intersected = None
     for n in nanobots:
         events_x.append((1, n.posn.x - n.radius, n))
         events_x.append((-1, n.posn.x + n.radius, n))
@@ -84,18 +85,20 @@ def solve_b(nanobots):
 
                 if len(box_z) > max_z_box:
                     max_z_box = len(box_z)
+                    intersected = list(box_z)
+                    print('box_z', box_z)
                     max_coords = ((x, x0), (y, y0), (z, z0))
-                    if max_z_box == 971 or max_z_box == 5:
-                        print('max_z_box', max_z_box, 'x', x, 'x0', x0, 'y', y, 'y0', y0, 'z', z, 'z0', z0)
-                        print('x', nx0, nx0.posn.x + nx0.radius, nx0.posn.y + nx0.radius, nx0.posn.z + nx0.radius)
-                        print('y', ny0, ny0.posn.x + ny0.radius, ny0.posn.y + ny0.radius, ny0.posn.z + ny0.radius)
-                        print('z', nz0, nz0.posn.x + nz0.radius, nz0.posn.y + nz0.radius, nz0.posn.z + nz0.radius)
-                        print(box_z)
 
 
     print('***')
     print(max_z_box)
     (x0, x1), (y0, y1), (z0, z1) = max_coords
+    print(intersected)
+    for x in range(x0, x1+1):
+        for y in range(y0, y1+1):
+            for z in range(z0, z1):
+                dist = [(n.radius, abs(n.posn.x - x) + abs(n.posn.y - y) + abs(n.posn.z - z)) for n in intersected]
+                print(x, y, z, dist, all(r < d for r, d in dist))
 
 
 def main():
