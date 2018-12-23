@@ -2,13 +2,19 @@
 Advent of Code 2018
 Day 23: Experimental Emergency Teleportation
 """
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from operator import attrgetter
 from tqdm import tqdm
 
 Posn = namedtuple('Posn', ['x', 'y', 'z'])
 Nanobot = namedtuple('Nanobot', ['posn', 'radius'])
 
+
+def manhattan_distance_pt(posn, nanobot):
+    "Return manhattan distance between point and nanobot."
+    return abs(posn.x - nanobot.posn.x) + \
+           abs(posn.y - nanobot.posn.y) + \
+           abs(posn.z - nanobot.posn.z)
 
 def manhattan_distance(nanobot0, nanobot1):
     "Return manhattan distance between nanobots."
@@ -38,67 +44,46 @@ def solve_a(nanobots):
     return sum(1 for n in nanobots if in_range(nanobot0, n))
 
 
-def solve_b(nanobots):
-    events_x = []
-    max_z_box = 0
-    max_coords = None
-    intersected = None
-    for n in nanobots:
-        events_x.append((1, n.posn.x - n.radius, n))
-        events_x.append((-1, n.posn.x + n.radius, n))
-    nanobots_by_x = sorted(events_x, key=lambda a: a[1])
-    box_x = set()
-    for (tx, x, nx), (tx0, x0, nx0) in tqdm(list(zip(nanobots_by_x[:-1],nanobots_by_x[1:]))):
-        if tx == -1:
-            box_x.discard(nx)
-        elif tx == 1:
-            box_x.add(nx)
-        if len(box_x) < max_z_box:
-            continue
-        events_y = []
-        for n in box_x:
-            events_y.append((1, n.posn.y - n.radius, n))
-            events_y.append((-1, n.posn.y + n.radius, n))
-        nanobots_by_y = sorted(events_y, key=lambda a: a[1])
-        box_y = set()
-        for (ty, y, ny), (ty0, y0, ny0) in zip(nanobots_by_y[:-1], nanobots_by_y[1:]):
-            if ty == -1:
-                box_y.discard(ny)
-            elif ty == 1:
-                box_y.add(ny)
-
-            if len(box_y) < max_z_box:
+def maximal_clique(cxs, nanobots):
+    max_cq = None
+    max_len = 0
+    for start in nanobots:
+        clique = set([start])
+        for v in cxs:
+            if v in clique:
                 continue
+            elif all(u in cxs[v] for u in clique):
+                clique.add(v)
 
-            events_z = []
-            for n in box_y:
-                events_z.append((1, n.posn.z - n.radius, n))
-                events_z.append((-1, n.posn.z + n.radius, n))
-            nanobots_by_z = sorted(events_z, key=lambda a: a[1])
-            box_z = set()
-            for (tz, z, nz), (tz0, z0, nz0) in zip(nanobots_by_z[:-1], nanobots_by_z[1:]):
-                if tz == -1:
-                    box_z.discard(nz)
-                    continue
-                elif tz == 1:
-                    box_z.add(nz)
+        if len(clique) > max_len:
+            max_len = len(clique)
+            max_cq = clique
 
-                if len(box_z) > max_z_box:
-                    max_z_box = len(box_z)
-                    intersected = list(box_z)
-                    print('box_z', box_z)
-                    max_coords = ((x, x0), (y, y0), (z, z0))
+    return max_cq
 
 
-    print('***')
-    print(max_z_box)
-    (x0, x1), (y0, y1), (z0, z1) = max_coords
-    print(intersected)
-    for x in range(x0, x1+1):
-        for y in range(y0, y1+1):
-            for z in range(z0, z1):
-                dist = [(n.radius, abs(n.posn.x - x) + abs(n.posn.y - y) + abs(n.posn.z - z)) for n in intersected]
-                print(x, y, z, dist, all(r < d for r, d in dist))
+def solve_b(nanobots):
+    "Solve second part of puzzle."
+    cxs = defaultdict(set)
+    for n0 in nanobots:
+        for n1 in nanobots:
+            if n1 == n0:
+                continue
+            if manhattan_distance(n0, n1) <= n0.radius:
+                cxs[n0].add(n1)
+
+    nn = None
+    nd = 0
+    mx_cq = maximal_clique(cxs, nanobots)
+    print(mx_cq)
+    for n in mx_cq:
+        d = manhattan_distance_pt(Posn(0, 0, 0), n) - n.radius
+        if d > nd:
+            nn = n
+            nd = d
+        print(n, d)
+    print('$', nn, nd)
+
 
 
 def main():
@@ -108,7 +93,6 @@ def main():
     print(len(nanobots), 'nanobots')
     # print(solve_a(nanobots))
     print(solve_b(nanobots))
-
 
 if __name__ == '__main__':
     main()
