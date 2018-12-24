@@ -73,9 +73,6 @@ class BattleGroup:
             if (g.flag, g.uid) in selected:
                 continue
             dmg = g.possible_damage(self.attack_type, self.effective_power())
-            # print("{} group {} would deal defending group {} {} damage".format(
-                # FLAG_STRS[self.flag], self.uid, g.uid, dmg))
-
             if dmg == 0:
                 continue
             if dmg > max_dmg:
@@ -100,10 +97,6 @@ class BattleGroup:
 
 def target_phase(battle_groups):
     "Target phase"
-#     for g in battle_groups:
-        # print(FLAG_STRS[g.flag], g.uid, 'units', g.units, 'attack damage', g.attack_damage, 'effective power', g.effective_power(), 'initiative', g.initiative)
-        # print(FLAG_STRS[g.flag], g.uid, 'contains', g.units, 'units', g.effective_power(), g.initiative, g.hitpoints)
-    # print()
     selected = set()
     targets = {}
     for g in sorted(battle_groups, key=lambda g: (g.flag, g.effective_power(), g.initiative), reverse=True):
@@ -115,64 +108,48 @@ def target_phase(battle_groups):
 
 def attack_phase(battle_groups, targets):
     "Attack phase."
+    casualties = 0
     for g in sorted(battle_groups, key=lambda g: g.initiative, reverse=True):
         if g.alive:
             t = targets[g]
             if t is None:
                 continue
             dead_units = t.receive_attack(g.attack_type, g.effective_power())
-            # print('{} group {} attacks defending group {}, killing {} units'.format(
-                # FLAG_STRS[g.flag], g.uid, t.uid, dead_units))
+            casualties += dead_units
+    return casualties
 
 
 def tick(battle_groups):
     targets = target_phase(battle_groups)
-    # print()
     attack_phase(battle_groups, targets)
     return [b for b in battle_groups if b.alive]
 
 def solve_a(battle_groups):
     i = 1
     while True:
-        # print('tick', i)
         battle_groups = tick(battle_groups)
         if len(set([b.flag for b in battle_groups])) == 1:
             break
-        # print()
-
-    # print()
     return sum(b.units for b in battle_groups)
 
 
 def solve_b(battle_groups):
     b = 1
     while True:
-        # print('buff', b)
         battle_groups0 = copy.deepcopy(battle_groups)
         for g in battle_groups0:
             g.buff(b)
-        i = 1
-        # while True:
-        for _ in range(7200):
-            # print('tick', i)
-            # battle_groups0 = tick(battle_groups0)
+        while True:
             targets = target_phase(battle_groups0)
-            if targets is None:
-                print("STALEMATE")
-            # print()
-            attack_phase(battle_groups0, targets)
+            casualties = attack_phase(battle_groups0, targets)
+            if casualties == 0:
+                break
             battle_groups0 = [b for b in battle_groups0 if b.alive]
             remaining = set([g.flag for g in battle_groups0])
             if len(remaining) == 1:
                 if set([IMMUNE_SYS]) == remaining:
                     return sum(g.units for g in battle_groups0)
                 break
-            # print()
-            i += 1
-
-        # print()
-        # print([g.units for g in battle_groups0])
-
         b += 1
 
 def main():
@@ -195,7 +172,7 @@ def main():
         line = sys.stdin.readline().strip()
         uid += 1
 
-    # print('Solution A', solve_a(copy.deepcopy(battle_groups)))
+    print(solve_a(copy.deepcopy(battle_groups)))
     print(solve_b(battle_groups))
 
 
